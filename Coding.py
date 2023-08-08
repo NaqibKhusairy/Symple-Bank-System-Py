@@ -1,4 +1,3 @@
-#naqib yang buat
 import mysql.connector
 
 table = [
