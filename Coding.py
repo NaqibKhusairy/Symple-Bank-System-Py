@@ -74,7 +74,7 @@ def register():
                 choose2(money, username)
 
         except mysql.connector.Error as err:
-            print("Failed to Insert data: {}".format(err))
+            print("Failed to Register: {}".format(err))
     else :
         print("Please Make Sure Your Password and confirm passwrd is same. please register again")
         register()
@@ -152,7 +152,7 @@ def forgotpass():
             register()
 
     except mysql.connector.Error as err:
-        print("Failed to log in: {}".format(err))
+        print("Failed to forgot password: {}".format(err))
 
 def choose():
     for row in table:
@@ -208,7 +208,7 @@ def withdraw(username):
                     print("Your account Balance: RM {:.2f}".format(money))
 
     except mysql.connector.Error as err:
-        print("Failed to update data: {}".format(err))
+        print("Failed to withdraw: {}".format(err))
 
 def checkbalance(username):
     try:
@@ -218,7 +218,7 @@ def checkbalance(username):
         money = mydbse.fetchone()[0]
         print("Your account Balance: RM {:.2f}".format(money))
     except mysql.connector.Error as err:
-        print("Failed to log in: {}".format(err))
+        print("Failed to check balance: {}".format(err))
 
 def bankin(username):
     try:
@@ -240,7 +240,7 @@ def bankin(username):
             print("Your account Balance: RM {:.2f}".format(money))
 
     except mysql.connector.Error as err:
-        print("Failed to update data: {}".format(err))
+        print("Failed to bank in: {}".format(err))
 
 def transfer(username):
     try:
@@ -289,10 +289,10 @@ def transfer(username):
                 else:
                     print("Username not found.")
             except mysql.connector.Error as err:
-                print("Failed to update data: {}".format(err))
+                print("Failed to transfer to other account : {}".format(err))
 
     except mysql.connector.Error as err:
-        print("Failed to update data: {}".format(err))
+        print("Failed to transfer: {}".format(err))
 
 def changepassword(username):
     print("\n-------------------------------------------------------------")
@@ -330,7 +330,7 @@ def changepassword(username):
             register()
 
     except mysql.connector.Error as err:
-        print("Failed to log in: {}".format(err))
+        print("Failed to change password: {}".format(err))
 
 def choose2(money, username):
     print("\n-------------------------------------------------------------")
