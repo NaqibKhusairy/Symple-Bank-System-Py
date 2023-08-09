@@ -1,4 +1,5 @@
 import mysql.connector
+import bcrypt
 
 table = [
     [" 1", "Login"],
@@ -38,7 +39,11 @@ def createdatabase():
 def register():
     username = input("Please enter your Username: ")
     passwrd = input("Please enter your Password: ")
+
+    # Hash the password using bcrypt
+    hashed_passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
     money = 0
+
     try:
         projectdatabase = mysql.connector.connect(
             host="localhost",
@@ -57,7 +62,7 @@ def register():
             mydbse.execute("INSERT INTO user"
                            "(username, password, money)"
                            "VALUES(%s, %s, %s)",
-                           (username, passwrd, money))
+                           (username, hashed_passwrd, money))
             projectdatabase.commit()
             print("Hey " + username + ", Your Account is registered.")
             choose2(money, username)
@@ -77,11 +82,11 @@ def login():
             database="bank")
 
         mydbse = projectdatabase.cursor()
-        mydbse.execute("SELECT * FROM user WHERE username=%s AND password=%s",
-                       (username, passwrd))
+        mydbse.execute("SELECT * FROM user WHERE username=%s",
+                       (username,))
         user_data = mydbse.fetchone()
 
-        if user_data:
+        if user_data and bcrypt.checkpw(passwrd.encode('utf-8'), user_data[1].encode('utf-8')):
             mydbse.execute("SELECT money FROM user WHERE username=%s",
                            (username,))
             money = mydbse.fetchone()[0]
