@@ -63,9 +63,6 @@ def register():
 
             if sameinpt:
                 print("Your Account is Already Registered. Please Log In.")
-                print("\n-------------------------------------------------------------")
-                print("                             Log In")
-                print("-------------------------------------------------------------\n")
                 login(count)
             else:
                 mydbse.execute("INSERT INTO user"
