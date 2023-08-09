@@ -3,7 +3,8 @@ import bcrypt
 
 table = [
     [" 1", "Login"],
-    [" 2", "Register"]
+    [" 2", "Register"],
+    [" 3", "Forgot Password"]
 ]
 
 table2 = [
@@ -47,34 +48,38 @@ def register():
     print("-------------------------------------------------------------\n")
     username = input("Please enter your Username: ")
     passwrd = input("Please enter your Password: ")
+    cpasswrd = input("Please confirm your New Password: ")
 
+    if passwrd == cpasswrd : 
+        passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+        money = 10
 
-    passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
-    money = 10
+        try:
+            mydbse = projectdatabase.cursor()
+            mydbse.execute("SELECT * FROM user WHERE username=%s",
+                           (username,))
+            sameinpt = mydbse.fetchone()
 
-    try:
-        mydbse = projectdatabase.cursor()
-        mydbse.execute("SELECT * FROM user WHERE username=%s",
-                       (username,))
-        sameinpt = mydbse.fetchone()
+            if sameinpt:
+                print("Your Account is Already Registered. Please Log In.")
+                print("\n-------------------------------------------------------------")
+                print("                             Log In")
+                print("-------------------------------------------------------------\n")
+                login(count)
+            else:
+                mydbse.execute("INSERT INTO user"
+                               "(username, password, money)"
+                               "VALUES(%s, %s, %s)",
+                               (username, passwrd, money))
+                projectdatabase.commit()
+                print("Hey " + username + ", Your Account is registered.")
+                choose2(money, username)
 
-        if sameinpt:
-            print("Your Account is Already Registered. Please Log In.")
-            print("\n-------------------------------------------------------------")
-            print("                             Log In")
-            print("-------------------------------------------------------------\n")
-            login(count)
-        else:
-            mydbse.execute("INSERT INTO user"
-                           "(username, password, money)"
-                           "VALUES(%s, %s, %s)",
-                           (username, passwrd, money))
-            projectdatabase.commit()
-            print("Hey " + username + ", Your Account is registered.")
-            choose2(money, username)
-
-    except mysql.connector.Error as err:
-        print("Failed to Insert data: {}".format(err))
+        except mysql.connector.Error as err:
+            print("Failed to Insert data: {}".format(err))
+    else :
+        print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+        register()
 
 def login(count):
     print("\n-------------------------------------------------------------")
@@ -117,6 +122,45 @@ def login(count):
     except mysql.connector.Error as err:
         print("Failed to log in: {}".format(err))
 
+def forgotpass():
+    print("\n-------------------------------------------------------------")
+    print("                        Forgot Password")
+    print("-------------------------------------------------------------\n")
+    username = input("Please enter your Username: ")
+
+    try:
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM user WHERE username=%s",
+                       (username,))
+        user_data = mydbse.fetchone()
+
+        if user_data:
+            passwrd = input("Please enter your New Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                mydbse.execute("UPDATE user SET password=%s WHERE username=%s",
+                    (passwrd, username))
+                projectdatabase.commit()
+                mydbse.execute("SELECT money FROM user WHERE username=%s",
+                    (username,))
+                money = mydbse.fetchone()[0]
+                print("Welcome back, " + username + ".")
+                choose2(money, username)
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+                forgotpass()
+        else:
+            print("Your account is not in the database, please register first")
+            print("\n-------------------------------------------------------------")
+            print("                            Register")
+            print("-------------------------------------------------------------\n")
+            register()
+
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
+
 def choose():
     print("\n-------------------------------------------------------------")
     for row in table:
@@ -126,20 +170,22 @@ def choose():
     print("-------------------------------------------------------------")
     
     try:
-        userchoice = int(input("Please Choose Login or Register [1 or 2]: "))
+        userchoice = int(input("Please Choose Login or Register or Forgot Password [1 or 2 or 3]: "))
         print()
         if userchoice == 1 or userchoice == 2:
             if userchoice == 1:
                 login(count)
             elif userchoice == 2:
                 register()
+        elif userchoice== 3:
+            forgotpass()
         else:
             print("\n-------------------------------------------------------------\n")
-            print("     You just need to fill either 1 or 2 !!!")
+            print("     You just need to fill either 1 or 2 or 3 !!!")
             print("\n-------------------------------------------------------------\n")
     except ValueError:
         print("\n-------------------------------------------------------------\n")
-        print("     You just need to fill either 1 or 2 !!!")
+        print("     You just need to fill either 1 or 2 or 3 !!!")
         print("\n-------------------------------------------------------------\n")
 
 def withdraw(username):
