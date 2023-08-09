@@ -9,8 +9,11 @@ table = [
 table2 = [
     [" 1", "Check Balance"],
     [" 2", "Withdraw"],
-    [" 3", "Bank In to Your Account"]
+    [" 3", "Bank In to Your Account"],
+    [" 4", "Log Out"]
 ]
+
+count=3
 
 def createdatabase():
     try:
@@ -41,7 +44,7 @@ def register():
     passwrd = input("Please enter your Password: ")
 
     # Hash the password using bcrypt
-    hashed_passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+    passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
     money = 0
 
     try:
@@ -58,11 +61,15 @@ def register():
 
         if sameinpt:
             print("Your Account is Already Registered. Please Log In.")
+            print("\n-------------------------------------------------------------")
+            print("                             Log In")
+            print("-------------------------------------------------------------\n")
+            login(count)
         else:
             mydbse.execute("INSERT INTO user"
                            "(username, password, money)"
                            "VALUES(%s, %s, %s)",
-                           (username, hashed_passwrd, money))
+                           (username, passwrd, money))
             projectdatabase.commit()
             print("Hey " + username + ", Your Account is registered.")
             choose2(money, username)
@@ -70,7 +77,7 @@ def register():
     except mysql.connector.Error as err:
         print("Failed to Insert data: {}".format(err))
 
-def login():
+def login(count):
     username = input("Please enter your Username: ")
     passwrd = input("Please enter your Password: ")
 
@@ -86,14 +93,30 @@ def login():
                        (username,))
         user_data = mydbse.fetchone()
 
-        if user_data and bcrypt.checkpw(passwrd.encode('utf-8'), user_data[1].encode('utf-8')):
-            mydbse.execute("SELECT money FROM user WHERE username=%s",
-                           (username,))
-            money = mydbse.fetchone()[0]
-            print("Welcome back, " + username + ".")
-            choose2(money, username)
+        if user_data:
+            if bcrypt.checkpw(passwrd.encode('utf-8'), user_data[1].encode('utf-8')):
+                mydbse.execute("SELECT money FROM user WHERE username=%s",
+                               (username,))
+                money = mydbse.fetchone()[0]
+                print("Welcome back, " + username + ".")
+                choose2(money, username)
+            else:
+                if count==1:
+                    print("Your password is wrong. Sorry You have reached the Maximum Limit which is 3 times. Please Try Again")
+                    choose()
+                else:
+                    count-=1
+                    print("Your password is wrong. Please try again. You only have "+str(count)+" chances left")
+                    print("\n-------------------------------------------------------------")
+                    print("                             Log In")
+                    print("-------------------------------------------------------------\n")
+                    login(count)
         else:
-            print("Invalid credentials. Please check your username and password.")
+            print("Your account is not in the database, please register first")
+            print("\n-------------------------------------------------------------")
+            print("                            Register")
+            print("-------------------------------------------------------------\n")
+            register()
 
     except mysql.connector.Error as err:
         print("Failed to log in: {}".format(err))
@@ -111,7 +134,7 @@ def choose():
         print()
         if userchoice == 1 or userchoice == 2:
             if userchoice == 1:
-                login()
+                login(count)
             elif userchoice == 2:
                 register()
         else:
@@ -195,7 +218,7 @@ def choose2(money, username):
     print("-------------------------------------------------------------")
     
     try:
-        userchoice2 = int(input("Please Choose [1 or 2 or 3]: "))
+        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4]: "))
         print()
         if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3:
             if userchoice2 == 1:
@@ -211,6 +234,8 @@ def choose2(money, username):
                 choose2(money, username)
             else:
                 choose()
+        elif userchoice2 == 4:
+            choose()
         else:
             print("\n-------------------------------------------------------------\n")
             print("     You just need to fill either 1 or 2 or 3 !!!")
