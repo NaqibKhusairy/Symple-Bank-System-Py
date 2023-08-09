@@ -10,10 +10,17 @@ table2 = [
     [" 1", "Check Balance"],
     [" 2", "Withdraw"],
     [" 3", "Bank In to Your Account"],
-    [" 4", "Log Out"]
+    [" 4", "Transfer To Other Bank Account"],
+    [" 5", "Log Out"]
 ]
 
-count=3
+count = 3
+
+projectdatabase = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="bank")
 
 def createdatabase():
     try:
@@ -25,11 +32,6 @@ def createdatabase():
         myprojectdb = mydb.cursor()
         myprojectdb.execute("CREATE DATABASE IF NOT EXISTS bank")
 
-        projectdatabase = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="bank")
 
         mydbse = projectdatabase.cursor()
         mydbse.execute("CREATE TABLE IF NOT EXISTS user "
@@ -40,20 +42,17 @@ def createdatabase():
         print("Error: {}".format(err))
 
 def register():
+    print("\n-------------------------------------------------------------")
+    print("                            Register")
+    print("-------------------------------------------------------------\n")
     username = input("Please enter your Username: ")
     passwrd = input("Please enter your Password: ")
 
-    # Hash the password using bcrypt
+
     passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
     money = 0
 
     try:
-        projectdatabase = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="bank")
-
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT * FROM user WHERE username=%s",
                        (username,))
@@ -78,16 +77,13 @@ def register():
         print("Failed to Insert data: {}".format(err))
 
 def login(count):
+    print("\n-------------------------------------------------------------")
+    print("                             Log In")
+    print("-------------------------------------------------------------\n")
     username = input("Please enter your Username: ")
     passwrd = input("Please enter your Password: ")
 
     try:
-        projectdatabase = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="bank")
-
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT * FROM user WHERE username=%s",
                        (username,))
@@ -101,12 +97,12 @@ def login(count):
                 print("Welcome back, " + username + ".")
                 choose2(money, username)
             else:
-                if count==1:
+                if count == 1:
                     print("Your password is wrong. Sorry You have reached the Maximum Limit which is 3 times. Please Try Again")
                     choose()
                 else:
-                    count-=1
-                    print("Your password is wrong. Please try again. You only have "+str(count)+" chances left")
+                    count -= 1
+                    print("Your password is wrong. Please try again. You only have " + str(count) + " chances left")
                     print("\n-------------------------------------------------------------")
                     print("                             Log In")
                     print("-------------------------------------------------------------\n")
@@ -140,20 +136,14 @@ def choose():
         else:
             print("\n-------------------------------------------------------------\n")
             print("     You just need to fill either 1 or 2 !!!")
-            print("\n--------------------------------------------------------\n")
+            print("\n-------------------------------------------------------------\n")
     except ValueError:
         print("\n-------------------------------------------------------------\n")
         print("     You just need to fill either 1 or 2 !!!")
-        print("\n--------------------------------------------------------\n")
+        print("\n-------------------------------------------------------------\n")
 
 def withdraw(username):
     try:
-        projectdatabase = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="bank")
-
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
@@ -178,17 +168,18 @@ def withdraw(username):
     except mysql.connector.Error as err:
         print("Failed to update data: {}".format(err))
 
-def checkbalance(money):
-    print("Your account Balance: RM {:.2f}".format(money))
+def checkbalance(username):
+    try:
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT money FROM user WHERE username=%s",
+                       (username,))
+        money = mydbse.fetchone()[0]
+        print("Your account Balance: RM {:.2f}".format(money))
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
 
 def bankin(username):
     try:
-        projectdatabase = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="bank")
-
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
@@ -209,8 +200,57 @@ def bankin(username):
     except mysql.connector.Error as err:
         print("Failed to update data: {}".format(err))
 
+def transfer(username):
+    try:
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT money FROM user WHERE username=%s",
+                       (username,))
+        money = mydbse.fetchone()[0]
+
+        if money == 0:
+            print("Your Account Balance is not enough to withdraw")
+
+        else:
+            transferusername = input("Please Enter the Username you want to transfer: ")
+            try:
+                mydbse = projectdatabase.cursor()
+                mydbse.execute("SELECT * FROM user WHERE username=%s",
+                    (transferusername,))
+                user_data = mydbse.fetchone()
+
+                if user_data:
+                    usertransfer = float(input("Please Enter Your Transfer Amount: RM "))
+                    if usertransfer > money:
+                        print("There is not enough money in your account to withdraw")
+                    else:
+                        money -= usertransfer
+                        mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
+                                       (money, username))
+                        projectdatabase.commit()
+
+                        mydbse = projectdatabase.cursor()
+                        mydbse.execute("SELECT money FROM user WHERE username=%s",
+                            (transferusername,))
+                        transfermoney = mydbse.fetchone()[0]
+                        transfermoney += usertransfer
+                        mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
+                                       (transfermoney, transferusername))
+                        projectdatabase.commit()
+
+                        print("You have Transfer to "+transferusername+" RM {:.2f}".format(usertransfer))
+                        print("Your account Balance: RM {:.2f}".format(money))
+                else:
+                    print("Username not found.")
+            except mysql.connector.Error as err:
+                print("Failed to update data: {}".format(err))
+
+    except mysql.connector.Error as err:
+        print("Failed to update data: {}".format(err))
+
 def choose2(money, username):
     print("\n-------------------------------------------------------------")
+    print("                 Account Username: "+username                 )
+    print("-------------------------------------------------------------")
     for row in table2:
         for col in row:
             print(col, end="\t")
@@ -218,15 +258,17 @@ def choose2(money, username):
     print("-------------------------------------------------------------")
     
     try:
-        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4]: "))
+        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4 or 5]: "))
         print()
-        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3:
+        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3 or userchoice2 == 4:
             if userchoice2 == 1:
-                checkbalance(money)
+                checkbalance(username)
             elif userchoice2 == 2:
                 withdraw(username)
             elif userchoice2 == 3:
                 bankin(username)
+            elif userchoice2 == 4:
+                transfer(username)
             
             contotext = input("\nDo you want to continue?\nInsert Y to Continue or press Enter to Exit: ")
             contotext = contotext.upper()
@@ -234,16 +276,18 @@ def choose2(money, username):
                 choose2(money, username)
             else:
                 choose()
-        elif userchoice2 == 4:
+        elif userchoice2 == 5:
             choose()
         else:
             print("\n-------------------------------------------------------------\n")
-            print("     You just need to fill either 1 or 2 or 3 !!!")
-            print("\n--------------------------------------------------------\n")
+            print("     You just need to fill either 1 or 2 or 3 or 4 or 5 !!!")
+            print("\n-------------------------------------------------------------\n")
+            choose2(money, username)
     except ValueError:
         print("\n-------------------------------------------------------------\n")
-        print("     You just need to fill either 1 or 2 or 3 !!!")
-        print("\n--------------------------------------------------------\n")
+        print("     You just need to fill either 1 or 2 or 3 or 4 or 5 !!!")
+        print("\n-------------------------------------------------------------\n")
+        choose2(money, username)
 
 createdatabase()
 while True:
