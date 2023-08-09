@@ -50,7 +50,7 @@ def register():
 
 
     passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
-    money = 0
+    money = 10
 
     try:
         mydbse = projectdatabase.cursor()
@@ -149,21 +149,25 @@ def withdraw(username):
                        (username,))
         money = mydbse.fetchone()[0]
 
-        if money == 0:
+        if money <= 10:
             print("Your Account Balance is not enough to withdraw")
-
         else:
             userwithdraw = float(input("Please Enter Your Withdraw Amount: RM "))
             if userwithdraw > money:
                 print("There is not enough money in your account to withdraw")
+            elif userwithdraw <= 0:
+                print("Please enter a valid withdraw amount.")
             else:
                 money -= userwithdraw
-                mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
-                               (money, username))
-                projectdatabase.commit()
+                if money < 10:
+                    print("There is not enough money in your account to withdraw. Minumum in your account must have RM 10")
+                else:
+                    mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
+                                   (money, username))
+                    projectdatabase.commit()
 
-                print("You have withdrawn RM {:.2f} from your account".format(userwithdraw))
-                print("Your account Balance: RM {:.2f}".format(money))
+                    print("You have withdrawn RM {:.2f} from your account".format(userwithdraw))
+                    print("Your account Balance: RM {:.2f}".format(money))
 
     except mysql.connector.Error as err:
         print("Failed to update data: {}".format(err))
@@ -186,7 +190,7 @@ def bankin(username):
         money = mydbse.fetchone()[0]
 
         bankinmoney = float(input("Please Enter Your Bankin Amount: RM "))
-        if bankinmoney < 0:
+        if bankinmoney <= 0:
             print("Please Insert Amount Bigger than RM 0")
         else:
             money += bankinmoney
@@ -208,7 +212,7 @@ def transfer(username):
         money = mydbse.fetchone()[0]
 
         if money == 0:
-            print("Your Account Balance is not enough to withdraw")
+            print("Your Account Balance is not enough to transfer")
 
         else:
             transferusername = input("Please Enter the Username you want to transfer: ")
@@ -221,24 +225,29 @@ def transfer(username):
                 if user_data:
                     usertransfer = float(input("Please Enter Your Transfer Amount: RM "))
                     if usertransfer > money:
-                        print("There is not enough money in your account to withdraw")
+                        print("There is not enough money in your account to Transfer")
+                    elif usertransfer <= 0:
+                        print("Please enter a valid transfer amount.")
                     else:
                         money -= usertransfer
-                        mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
-                                       (money, username))
-                        projectdatabase.commit()
+                        if money < 10:
+                            print("There is not enough money in your account to withdraw. Minumum in your account must have RM 10")
+                        else:
+                            mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
+                                           (money, username))
+                            projectdatabase.commit()
 
-                        mydbse = projectdatabase.cursor()
-                        mydbse.execute("SELECT money FROM user WHERE username=%s",
-                            (transferusername,))
-                        transfermoney = mydbse.fetchone()[0]
-                        transfermoney += usertransfer
-                        mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
-                                       (transfermoney, transferusername))
-                        projectdatabase.commit()
+                            mydbse = projectdatabase.cursor()
+                            mydbse.execute("SELECT money FROM user WHERE username=%s",
+                                (transferusername,))
+                            transfermoney = mydbse.fetchone()[0]
+                            transfermoney += usertransfer
+                            mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
+                                           (transfermoney, transferusername))
+                            projectdatabase.commit()
 
-                        print("You have Transfer to "+transferusername+" RM {:.2f}".format(usertransfer))
-                        print("Your account Balance: RM {:.2f}".format(money))
+                            print("You have Transfer to "+transferusername+" RM {:.2f}".format(usertransfer))
+                            print("Your account Balance: RM {:.2f}".format(money))
                 else:
                     print("Username not found.")
             except mysql.connector.Error as err:
