@@ -12,7 +12,8 @@ table2 = [
     [" 2", "Withdraw"],
     [" 3", "Bank In to Your Account"],
     [" 4", "Transfer To Other Bank Account"],
-    [" 5", "Log Out"]
+    [" 5", "Change Password"],
+    [" 6", "Log Out"]
 ]
 
 count = 3
@@ -302,6 +303,44 @@ def transfer(username):
     except mysql.connector.Error as err:
         print("Failed to update data: {}".format(err))
 
+def changepassword(username):
+    print("\n-------------------------------------------------------------")
+    print("                        Change Password")
+    print("-------------------------------------------------------------\n")
+
+    try:
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM user WHERE username=%s",
+                       (username,))
+        user_data = mydbse.fetchone()
+
+        if user_data:
+            passwrd = input("Please enter your New Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                mydbse.execute("UPDATE user SET password=%s WHERE username=%s",
+                    (passwrd, username))
+                projectdatabase.commit()
+                mydbse.execute("SELECT money FROM user WHERE username=%s",
+                    (username,))
+                money = mydbse.fetchone()[0]
+                print(username + ", Your Password have been changed.")
+                choose2(money, username)
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+                forgotpass()
+        else:
+            print("Your account is not in the database, please register first")
+            print("\n-------------------------------------------------------------")
+            print("                            Register")
+            print("-------------------------------------------------------------\n")
+            register()
+
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
+
 def choose2(money, username):
     print("\n-------------------------------------------------------------")
     print("                 Account Username: "+username                 )
@@ -313,9 +352,9 @@ def choose2(money, username):
     print("-------------------------------------------------------------")
     
     try:
-        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4 or 5]: "))
+        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4 or 5 or 6]: "))
         print()
-        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3 or userchoice2 == 4:
+        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3 or userchoice2 == 4 or userchoice2 == 5:
             if userchoice2 == 1:
                 checkbalance(username)
             elif userchoice2 == 2:
@@ -324,6 +363,8 @@ def choose2(money, username):
                 bankin(username)
             elif userchoice2 == 4:
                 transfer(username)
+            elif userchoice2 == 5:
+                changepassword(username)
             
             contotext = input("\nDo you want to continue?\nInsert Y to Continue or press Enter to Exit: ")
             contotext = contotext.upper()
@@ -331,7 +372,7 @@ def choose2(money, username):
                 choose2(money, username)
             else:
                 choose()
-        elif userchoice2 == 5:
+        elif userchoice2 == 6:
             choose()
         else:
             print("\n-------------------------------------------------------------\n")
