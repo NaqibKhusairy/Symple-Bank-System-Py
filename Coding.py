@@ -163,7 +163,6 @@ def forgotpass():
         print("Failed to log in: {}".format(err))
 
 def choose():
-    print("\n-------------------------------------------------------------")
     for row in table:
         for col in row:
             print(col, end="\t")
@@ -373,6 +372,9 @@ def choose2(money, username):
             else:
                 choose()
         elif userchoice2 == 6:
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             choose()
         else:
             print("\n-------------------------------------------------------------\n")
@@ -386,5 +388,6 @@ def choose2(money, username):
         choose2(money, username)
 
 createdatabase()
+print("-------------------------------------------------------------")
 while True:
     choose()
