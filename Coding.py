@@ -105,19 +105,14 @@ def login(count):
             else:
                 if count == 1:
                     print("Your password is wrong. Sorry You have reached the Maximum Limit which is 3 times. Please Try Again")
+                    print("\n-------------------------------------------------------------")
                     choose()
                 else:
                     count -= 1
                     print("Your password is wrong. Please try again. You only have " + str(count) + " chances left")
-                    print("\n-------------------------------------------------------------")
-                    print("                             Log In")
-                    print("-------------------------------------------------------------\n")
                     login(count)
         else:
             print("Your account is not in the database, please register first")
-            print("\n-------------------------------------------------------------")
-            print("                            Register")
-            print("-------------------------------------------------------------\n")
             register()
 
     except mysql.connector.Error as err:
