@@ -4,7 +4,8 @@ import bcrypt
 table = [
     [" 1", "Login"],
     [" 2", "Register"],
-    [" 3", "Forgot Password"]
+    [" 3", "Forgot Password"],
+    [" 4", "Admin"]
 ]
 
 table2 = [
@@ -16,13 +17,31 @@ table2 = [
     [" 6", "Log Out"]
 ]
 
+tableadmin = [
+    [" 1", "Login Admin"],
+    [" 2", "Register Admin"],
+    [" 3", "Forgot Admin Password"],
+    [" 4", "Back"],
+]
+
+adminsitab = [
+    [" 1", "Check User Account"],
+    [" 2", "Check Admin Account"],
+    [" 3", "Update User Account"],
+    [" 4", "Update Admin Account"],
+    [" 5", "Delete User"],
+    [" 6", "Check Money In All Account"],
+    [" 7", "Log Out"]
+]
+
 count = 3
 
-projectdatabase = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="bank")
+def database():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="bank")
 
 def createdatabase():
     try:
@@ -34,12 +53,18 @@ def createdatabase():
         myprojectdb = mydb.cursor()
         myprojectdb.execute("CREATE DATABASE IF NOT EXISTS bank")
 
-
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
+
         mydbse.execute("CREATE TABLE IF NOT EXISTS user "
                        "(username VARCHAR(200), "
                        "password VARCHAR(200), "
                        "money DOUBLE)")
+
+        mydbse.execute("CREATE TABLE IF NOT EXISTS admin "
+                       "(username VARCHAR(200), "
+                       "password VARCHAR(200)) ")
+
     except mysql.connector.Error as err:
         print("Error: {}".format(err))
 
@@ -48,23 +73,29 @@ def register():
     print("                            Register")
     print("-------------------------------------------------------------\n")
     username = input("Please enter your Username: ")
-    passwrd = input("Please enter your Password: ")
-    cpasswrd = input("Please confirm your New Password: ")
 
-    if passwrd == cpasswrd : 
-        passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
-        money = 10
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM user WHERE username=%s",
+                       (username,))
+        sameinpt = mydbse.fetchone()
 
-        try:
-            mydbse = projectdatabase.cursor()
-            mydbse.execute("SELECT * FROM user WHERE username=%s",
-                           (username,))
-            sameinpt = mydbse.fetchone()
-
-            if sameinpt:
-                print("Your Account is Already Registered. Please Log In.")
+        if sameinpt:
+            print("Your Account is Already Registered. Please Log In.")
+            askuser=input("Do you want To Register Other Account ? [ Y to continue or any key to login ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                register()
+            else :
                 login(count)
-            else:
+        else:
+            passwrd = input("Please enter your Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                money = 10
                 mydbse.execute("INSERT INTO user"
                                "(username, password, money)"
                                "VALUES(%s, %s, %s)",
@@ -72,27 +103,28 @@ def register():
                 projectdatabase.commit()
                 print("Hey " + username + ", Your Account is registered.")
                 choose2(money, username)
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+                register()
 
-        except mysql.connector.Error as err:
-            print("Failed to Register: {}".format(err))
-    else :
-        print("Please Make Sure Your Password and confirm passwrd is same. please register again")
-        register()
+    except mysql.connector.Error as err:
+        print("Failed to Insert data: {}".format(err))
 
 def login(count):
     print("\n-------------------------------------------------------------")
     print("                             Log In")
     print("-------------------------------------------------------------\n")
     username = input("Please enter your Username: ")
-    passwrd = input("Please enter your Password: ")
 
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT * FROM user WHERE username=%s",
                        (username,))
         user_data = mydbse.fetchone()
 
         if user_data:
+            passwrd = input("Please enter your Password: ")
             if bcrypt.checkpw(passwrd.encode('utf-8'), user_data[1].encode('utf-8')):
                 mydbse.execute("SELECT money FROM user WHERE username=%s",
                                (username,))
@@ -110,7 +142,12 @@ def login(count):
                     login(count)
         else:
             print("Your account is not in the database, please register first")
-            register()
+            askuser=input("Do you want To Login ? [ Y to continue or any key to register ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                login(count)
+            else :
+                register()
 
     except mysql.connector.Error as err:
         print("Failed to log in: {}".format(err))
@@ -122,6 +159,7 @@ def forgotpass():
     username = input("Please enter your Username: ")
 
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT * FROM user WHERE username=%s",
                        (username,))
@@ -146,13 +184,210 @@ def forgotpass():
                 forgotpass()
         else:
             print("Your account is not in the database, please register first")
-            print("\n-------------------------------------------------------------")
-            print("                            Register")
-            print("-------------------------------------------------------------\n")
-            register()
+            askuser=input("Do you want To bank ? [ Y to back or any key to continue ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                print("\n-------------------------------------------------------------")
+                choose()
+            else :
+                forgotpass()
 
     except mysql.connector.Error as err:
-        print("Failed to forgot password: {}".format(err))
+        print("Failed to log in: {}".format(err))
+
+def adminside(username):
+    print("\n-------------------------------------------------------------")
+    print("                  Admin Username: "+username                  )
+    print("-------------------------------------------------------------\n")
+    for row in adminsitab:
+        for col in row:
+            print(col, end="\t")
+        print()
+    print("-------------------------------------------------------------")
+
+    try:
+        userchoice = int(input("Please Choose [ 1 or 2 or 3 or 4 or 5 or 6 or 7 ]: "))
+        print()
+        if userchoice == 1 or userchoice == 2:
+            if userchoice == 1:
+                print("belum siap")
+                admin()
+            elif userchoice == 2:
+                print("belum siap")
+                admin()
+        elif userchoice== 3:
+            print("belum siap")
+            admin()
+        elif userchoice== 4:
+            print("belum siap")
+            admin()
+        elif userchoice== 5:
+            print("belum siap")
+            admin()
+        elif userchoice== 6:
+            print("belum siap")
+            admin()
+        elif userchoice == 7 :
+            admin()
+        else:
+            print("\n-------------------------------------------------------------\n")
+            print("     You just need to fill either 1 or 2 or 3 or 4 or 5 or 6 or 7 !!!")
+            print("\n-------------------------------------------------------------\n")
+    except ValueError:
+        print("\n-------------------------------------------------------------\n")
+        print("     You just need to fill either 1 or 2 or 3 or 4 or 5 or 6 or 7 !!!")
+        print("\n-------------------------------------------------------------\n")
+
+def adminlogin(count):
+    print("\n-------------------------------------------------------------")
+    print("                         Admin Log In")
+    print("-------------------------------------------------------------\n")
+    username = input("Please enter your Username: ")
+
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM admin WHERE username=%s",
+                       (username,))
+        user_data = mydbse.fetchone()
+
+        if user_data:
+            passwrd = input("Please enter your Password: ")
+            if bcrypt.checkpw(passwrd.encode('utf-8'), user_data[1].encode('utf-8')):
+                print("Welcome back, " + username + ".")
+                adminside(username)
+            else:
+                if count == 1:
+                    print("Your password is wrong. Sorry You have reached the Maximum Limit which is 3 times. Please Try Again")
+                    print("\n-------------------------------------------------------------")
+                    choose()
+                else:
+                    count -= 1
+                    print("Your password is wrong. Please try again. You only have " + str(count) + " chances left")
+                    adminlogin(count)
+        else:
+            print("Your account is not in the database, please register first")
+            askuser=input("Do you want To Login ? [ Y to continue or any key to register ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                adminlogin(count)
+            else :
+                adminrgister()
+
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
+
+def adminrgister():
+    print("\n-------------------------------------------------------------")
+    print("                       Admin Register")
+    print("-------------------------------------------------------------\n")
+    username = input("Please enter your Username: ")
+
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM admin WHERE username=%s",
+                       (username,))
+        sameinpt = mydbse.fetchone()
+
+        if sameinpt:
+            print("Your Account is Already Registered. Please Log In.")
+            askuser=input("Do you want To Register Other Account ? [ Y to continue or any key to login ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                adminrgister()
+            else :
+                adminlogin(count)
+        else:
+            passwrd = input("Please enter your Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                mydbse.execute("INSERT INTO admin"
+                               "(username, password)"
+                               "VALUES(%s, %s)",
+                               (username, passwrd))
+                projectdatabase.commit()
+                print("Hey " + username + ", Your Account is registered.")
+                adminside(username)
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+                adminrgister()
+
+    except mysql.connector.Error as err:
+        print("Failed to Insert data: {}".format(err))
+
+def adminforgot():
+    print("\n-------------------------------------------------------------")
+    print("                    Admin Forgot Password")
+    print("-------------------------------------------------------------\n")
+    username = input("Please enter your Username: ")
+
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM admin WHERE username=%s",
+                       (username,))
+        user_data = mydbse.fetchone()
+
+        if user_data:
+            passwrd = input("Please enter your New Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                mydbse.execute("UPDATE user SET password=%s WHERE username=%s",
+                    (passwrd, username))
+                projectdatabase.commit()
+                print("Welcome back, " + username + ".")
+                print("belum siap")
+                admin()
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
+                adminforgot()
+        else:
+            print("Your account is not in the database, please register first")
+            askuser=input("Do you want To bank ? [ Y to back or any key to continue ] : ")
+            askuser=askuser.upper()
+            if askuser == "Y":
+                print()
+                admin()
+            else :
+                adminforgot()
+
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
+
+def admin():
+    print("-------------------------------------------------------------")
+    for row in tableadmin:
+        for col in row:
+            print(col, end="\t")
+        print()
+    print("-------------------------------------------------------------")
+
+    try:
+        userchoice = int(input("Please Choose [ 1 or 2 or 3 or 4]: "))
+        print()
+        if userchoice == 1 or userchoice == 2:
+            if userchoice == 1:
+                adminlogin(count)
+            elif userchoice == 2:
+                adminrgister()
+        elif userchoice== 3:
+                adminforgot()
+        elif userchoice== 4:
+            print("-------------------------------------------------------------")
+            choose()
+        else:
+            print("\n-------------------------------------------------------------\n")
+            print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
+            print("\n-------------------------------------------------------------\n")
+    except ValueError:
+        print("\n-------------------------------------------------------------\n")
+        print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
+        print("\n-------------------------------------------------------------\n")
 
 def choose():
     for row in table:
@@ -162,7 +397,7 @@ def choose():
     print("-------------------------------------------------------------")
     
     try:
-        userchoice = int(input("Please Choose Login or Register or Forgot Password [1 or 2 or 3]: "))
+        userchoice = int(input("Please Choose [1 or 2 or 3 or 4]: "))
         print()
         if userchoice == 1 or userchoice == 2:
             if userchoice == 1:
@@ -171,17 +406,20 @@ def choose():
                 register()
         elif userchoice== 3:
             forgotpass()
+        elif userchoice== 4:
+            admin()
         else:
             print("\n-------------------------------------------------------------\n")
-            print("     You just need to fill either 1 or 2 or 3 !!!")
+            print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
             print("\n-------------------------------------------------------------\n")
     except ValueError:
         print("\n-------------------------------------------------------------\n")
-        print("     You just need to fill either 1 or 2 or 3 !!!")
+        print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
         print("\n-------------------------------------------------------------\n")
 
 def withdraw(username):
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
@@ -208,20 +446,22 @@ def withdraw(username):
                     print("Your account Balance: RM {:.2f}".format(money))
 
     except mysql.connector.Error as err:
-        print("Failed to withdraw: {}".format(err))
+        print("Failed to update data: {}".format(err))
 
 def checkbalance(username):
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
         money = mydbse.fetchone()[0]
         print("Your account Balance: RM {:.2f}".format(money))
     except mysql.connector.Error as err:
-        print("Failed to check balance: {}".format(err))
+        print("Failed to log in: {}".format(err))
 
 def bankin(username):
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
@@ -240,10 +480,11 @@ def bankin(username):
             print("Your account Balance: RM {:.2f}".format(money))
 
     except mysql.connector.Error as err:
-        print("Failed to bank in: {}".format(err))
+        print("Failed to update data: {}".format(err))
 
 def transfer(username):
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT money FROM user WHERE username=%s",
                        (username,))
@@ -289,10 +530,10 @@ def transfer(username):
                 else:
                     print("Username not found.")
             except mysql.connector.Error as err:
-                print("Failed to transfer to other account : {}".format(err))
+                print("Failed to update data: {}".format(err))
 
     except mysql.connector.Error as err:
-        print("Failed to transfer: {}".format(err))
+        print("Failed to update data: {}".format(err))
 
 def changepassword(username):
     print("\n-------------------------------------------------------------")
@@ -300,6 +541,7 @@ def changepassword(username):
     print("-------------------------------------------------------------\n")
 
     try:
+        projectdatabase = database()
         mydbse = projectdatabase.cursor()
         mydbse.execute("SELECT * FROM user WHERE username=%s",
                        (username,))
@@ -330,7 +572,7 @@ def changepassword(username):
             register()
 
     except mysql.connector.Error as err:
-        print("Failed to change password: {}".format(err))
+        print("Failed to log in: {}".format(err))
 
 def choose2(money, username):
     print("\n-------------------------------------------------------------")
