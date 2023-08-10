@@ -424,23 +424,44 @@ def adminside(username):
         print()
         if userchoice == 1 :
             checkuser(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice== 2:
             updateuser(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice== 3:
             updateadmin(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice== 4:
             adminchangepassword(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice== 5:
             deleteuser(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice== 6:
             checkmoneyinbank(username)
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         elif userchoice == 7 :
+            print("\n-------------------------------------------------------------")
+            print("         Thank you "+username+" For Using Our System")
+            print("-------------------------------------------------------------")
             admin()
         else:
             print("\n-------------------------------------------------------------\n")
