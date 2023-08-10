@@ -818,6 +818,8 @@ def choose2(money, username):
                 choose2(money, username)
             else:
                 print("\n-------------------------------------------------------------")
+                print("         Thank you "+username+" For Using Our System")
+                print("-------------------------------------------------------------")
                 choose()
         elif userchoice2 == 6:
             print("\n-------------------------------------------------------------")
