@@ -26,10 +26,10 @@ tableadmin = [
 
 adminsitab = [
     [" 1", "Check User Account"],
-    [" 2", "Check Admin Account"],
-    [" 3", "Update User Account"],
-    [" 4", "Update Admin Account"],
-    [" 5", "Delete User"],
+    [" 2", "Update User Account"],
+    [" 3", "Update Admin Account"],
+    [" 4", "Change Password"],
+    [" 5", "Delete Account"],
     [" 6", "Check Money In All Account"],
     [" 7", "Log Out"]
 ]
@@ -195,6 +195,220 @@ def forgotpass():
     except mysql.connector.Error as err:
         print("Failed to log in: {}".format(err))
 
+def checkuser(username):
+    print("\n-------------------------------------------------------------")
+    print("                     Check User Account")
+    print("-------------------------------------------------------------\n")
+    username2 = input("Please enter your Username: ")
+    print("\n-------------------------------------------------------------")
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT money FROM user WHERE username=%s",
+                       (username2,))
+        money = mydbse.fetchone()[0]
+        print("Username : "+username2)
+        print("Account Balance : RM {:.2f}".format(money))
+        adminside(username)
+
+    except :
+        print("Failed to Find User ")
+        adminside(username)
+
+def updateuser(username):
+    print("\n-------------------------------------------------------------")
+    print("                     Update User Account")
+    print("-------------------------------------------------------------\n")
+    username1 = input("Please enter Username: ")
+    print("\n-------------------------------------------------------------")
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        
+        mydbse.execute("SELECT money FROM user WHERE username=%s", (username1,))
+        money = mydbse.fetchone()[0]
+        
+        print("Username:", username1)
+        print("Account Balance: RM {:.2f}".format(money))
+        
+        askuser = input("Do you want to update the "+username1+" account? [Y or N]: ").upper()
+
+        if askuser == "Y":
+            print("-------------------------------------------------------------")
+            print("Updating "+username1+" account...")
+            print("-------------------------------------------------------------")
+            print("Username : "+username1)
+            passwrd = input("Please enter Password : ")
+            passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+            money = float(input("Please Enter Your Amount: RM "))
+            print("-------------------------------------------------------------")
+            if money < 10:
+                print("Please Enter Amount Bigger than RM 10")
+            else :
+                mydbse.execute("UPDATE user SET password=%s , money=%s WHERE username=%s",
+                    (passwrd, money, username1))
+                projectdatabase.commit()
+                print("Updating "+username1+" account Sucsessfull")
+                adminside(username)
+        elif askuser == "N":
+            print("Updating Canceled")
+            adminside(username)
+        else:
+            print("You need to enter either Y or N !!!")
+            adminside(username)
+
+    except :
+        print("User notfound")
+        adminside(username)
+
+def updateadmin(username):
+    print("\n-------------------------------------------------------------")
+    print("                     Update Admin Account")
+    print("-------------------------------------------------------------\n")
+    username1 = input("Please enter Username: ")
+    print("\n-------------------------------------------------------------")
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+
+        mydbse.execute("SELECT * FROM admin WHERE username=%s", (username1,))
+        admin_data = mydbse.fetchone()
+
+        if admin_data:
+            print("Username:", username1)
+
+            askuser = input(f"Do you want to update the {username1} account? [Y or N]: ").upper()
+
+            if askuser == "Y":
+                print("-------------------------------------------------------------")
+                print("Updating", username1, "account...")
+                print("-------------------------------------------------------------")
+                print("Username : "+username1)
+                passwrd = input("Please enter Password: ")
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                print("-------------------------------------------------------------")
+                mydbse.execute("UPDATE admin SET password=%s WHERE username=%s",
+                               (passwrd, username1))
+                projectdatabase.commit()
+                print("Updating", username1, "account Successful")
+                adminside(username)
+            elif askuser == "N":
+                print("Updating Canceled")
+                adminside(username)
+            else:
+                print("You need to enter either Y or N !!!")
+                adminside(username)
+        else:
+            print("User not found")
+            adminside(username)
+
+    except mysql.connector.Error as err:
+        print("Error:", err)
+        adminside(username)
+
+def adminchangepassword(username):
+    print("\n-------------------------------------------------------------")
+    print("                    Admin Change Password")
+    print("-------------------------------------------------------------\n")
+
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT * FROM admin WHERE username=%s",
+                       (username,))
+        user_data = mydbse.fetchone()
+
+        if user_data:
+            passwrd = input("Please enter your New Password: ")
+            cpasswrd = input("Please confirm your New Password: ")
+
+            if passwrd == cpasswrd : 
+                passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
+                mydbse.execute("UPDATE admin SET password=%s WHERE username=%s",
+                    (passwrd, username))
+                projectdatabase.commit()
+                print(username + ", Your Password have been changed.")
+                adminside(username)
+            else :
+                print("Please Make Sure Your Password and confirm passwrd is same.")
+                adminchangepassword(username)
+        else:
+            print("Your account is not in the database, please register first")
+            adminrgister()
+
+    except mysql.connector.Error as err:
+        print("Failed to log in: {}".format(err))
+
+def deleteuser(username):
+    print("\n-------------------------------------------------------------")
+    print("                     Delete Account")
+    print("-------------------------------------------------------------\n")
+    category = input("Delete From User or Admin : ").lower()
+    print("\n-------------------------------------------------------------\n")
+    if category == "user" or category == "admin":
+        username1 = input("Please enter Username: ")
+        print("\n-------------------------------------------------------------")
+        try:
+            projectdatabase = database()
+            mydbse = projectdatabase.cursor()
+
+            if category == "user":
+                mydbse.execute("SELECT * FROM user WHERE username=%s", (username1,))
+            elif category == "admin":
+                mydbse.execute("SELECT * FROM admin WHERE username=%s", (username1,))
+            else:
+                print("Invalid category. Please select either 'user' or 'admin'.")
+
+            admin_data = mydbse.fetchone()
+
+            if admin_data:
+                print("Username:", username1)
+
+                askuser = input(f"Do you want to Delete the {username1} account? [Y or N]: ").upper()
+
+                if askuser == "Y":
+                    print("-------------------------------------------------------------")
+                    print("Deleting", username1, "account...")
+                    print("-------------------------------------------------------------")
+                    
+                    if category == "user":
+                        mydbse.execute("DELETE FROM user WHERE username=%s", (username1,))
+                    elif category == "admin":
+                        mydbse.execute("DELETE FROM admin WHERE username=%s", (username1,))
+                    
+                    projectdatabase.commit()
+                    print("Deleting", username1, "account Successful")
+                    adminside(username)
+
+                elif askuser == "N":
+                    print("Deletion Canceled")
+                    adminside(username)
+                else:
+                    print("You need to enter either Y or N !!!")
+                    adminside(username)
+            else:
+                print(f"{category.capitalize()} not found")
+                adminside(username)
+
+        except mysql.connector.Error as err:
+            print("Error:", err)
+            adminside(username)
+    else:
+        print("You need to enter either User Or Admin !!!!! ")
+        deleteuser(username)
+
+def checkmoneyinbank(username):
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+        mydbse.execute("SELECT money FROM user")
+        money_records = mydbse.fetchall()
+        money = sum(record[0] for record in money_records)
+        print("Total Balance Account In All Account: RM {:.2f}".format(money))
+        adminside(username)
+    except mysql.connector.Error as err:
+        print("Failed to count Money: {}".format(err))
+
 def adminside(username):
     print("\n-------------------------------------------------------------")
     print("                  Admin Username: "+username                  )
@@ -208,24 +422,23 @@ def adminside(username):
     try:
         userchoice = int(input("Please Choose [ 1 or 2 or 3 or 4 or 5 or 6 or 7 ]: "))
         print()
-        if userchoice == 1 or userchoice == 2:
-            if userchoice == 1:
-                print("belum siap")
-                admin()
-            elif userchoice == 2:
-                print("belum siap")
-                admin()
+        if userchoice == 1 :
+            checkuser(username)
+            admin()
+        elif userchoice== 2:
+            updateuser(username)
+            admin()
         elif userchoice== 3:
-            print("belum siap")
+            updateadmin(username)
             admin()
         elif userchoice== 4:
-            print("belum siap")
+            adminchangepassword(username)
             admin()
         elif userchoice== 5:
-            print("belum siap")
+            deleteuser(username)
             admin()
         elif userchoice== 6:
-            print("belum siap")
+            checkmoneyinbank(username)
             admin()
         elif userchoice == 7 :
             admin()
@@ -233,10 +446,12 @@ def adminside(username):
             print("\n-------------------------------------------------------------\n")
             print("     You just need to fill either 1 or 2 or 3 or 4 or 5 or 6 or 7 !!!")
             print("\n-------------------------------------------------------------\n")
+            adminside(username)
     except ValueError:
         print("\n-------------------------------------------------------------\n")
         print("     You just need to fill either 1 or 2 or 3 or 4 or 5 or 6 or 7 !!!")
         print("\n-------------------------------------------------------------\n")
+        adminside(username)
 
 def adminlogin(count):
     print("\n-------------------------------------------------------------")
@@ -337,12 +552,11 @@ def adminforgot():
 
             if passwrd == cpasswrd : 
                 passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
-                mydbse.execute("UPDATE user SET password=%s WHERE username=%s",
+                mydbse.execute("UPDATE admin SET password=%s WHERE username=%s",
                     (passwrd, username))
                 projectdatabase.commit()
                 print("Welcome back, " + username + ".")
-                print("belum siap")
-                admin()
+                adminside(username)
             else :
                 print("Please Make Sure Your Password and confirm passwrd is same. please register again")
                 adminforgot()
@@ -384,10 +598,12 @@ def admin():
             print("\n-------------------------------------------------------------\n")
             print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
             print("\n-------------------------------------------------------------\n")
+            admin()
     except ValueError:
         print("\n-------------------------------------------------------------\n")
         print("     You just need to fill either 1 or 2 or 3 or 4 !!!")
         print("\n-------------------------------------------------------------\n")
+        admin()
 
 def choose():
     for row in table:
@@ -562,13 +778,10 @@ def changepassword(username):
                 print(username + ", Your Password have been changed.")
                 choose2(money, username)
             else :
-                print("Please Make Sure Your Password and confirm passwrd is same. please register again")
-                forgotpass()
+                print("Please Make Sure Your Password and confirm passwrd is same.")
+                changepassword(username)
         else:
             print("Your account is not in the database, please register first")
-            print("\n-------------------------------------------------------------")
-            print("                            Register")
-            print("-------------------------------------------------------------\n")
             register()
 
     except mysql.connector.Error as err:
