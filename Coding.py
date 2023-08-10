@@ -817,6 +817,7 @@ def choose2(money, username):
             if contotext == "Y":
                 choose2(money, username)
             else:
+                print("\n-------------------------------------------------------------")
                 choose()
         elif userchoice2 == 6:
             print("\n-------------------------------------------------------------")
