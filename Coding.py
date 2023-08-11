@@ -13,8 +13,9 @@ table2 = [
     [" 2", "Withdraw"],
     [" 3", "Bank In to Your Account"],
     [" 4", "Transfer To Other Bank Account"],
-    [" 5", "Change Password"],
-    [" 6", "Log Out"]
+    [" 5", "Transaction History"],
+    [" 6", "Change Password"],
+    [" 7", "Log Out"]
 ]
 
 tableadmin = [
@@ -65,6 +66,11 @@ def createdatabase():
                        "(username VARCHAR(200), "
                        "password VARCHAR(200)) ")
 
+        mydbse.execute("CREATE TABLE IF NOT EXISTS history "
+                       "(username VARCHAR(200), "
+                       "detail VARCHAR(200), "
+                       "money VARCHAR(200)) ")
+
     except mysql.connector.Error as err:
         print("Error: {}".format(err))
 
@@ -101,7 +107,14 @@ def register():
                                "VALUES(%s, %s, %s)",
                                (username, passwrd, money))
                 projectdatabase.commit()
+
+                mydbse.execute("INSERT INTO history"
+                               "(username, detail, money)"
+                               "VALUES(%s, %s, %s)",
+                               (username, "Register Account", "+RM {:.2f}".format(money)))
+                projectdatabase.commit()
                 print("Hey " + username + ", Your Account is registered.")
+
                 choose2(money, username)
             else :
                 print("Please Make Sure Your Password and confirm passwrd is same. please register again")
@@ -240,14 +253,27 @@ def updateuser(username):
             print("Username : "+username1)
             passwrd = input("Please enter Password : ")
             passwrd = bcrypt.hashpw(passwrd.encode('utf-8'), bcrypt.gensalt())
-            money = float(input("Please Enter Your Amount: RM "))
+            money2 = float(input("Please Enter Your Amount: RM "))
             print("-------------------------------------------------------------")
-            if money < 10:
+            if money2 < 10:
                 print("Please Enter Amount Bigger than RM 10")
             else :
                 mydbse.execute("UPDATE user SET password=%s , money=%s WHERE username=%s",
-                    (passwrd, money, username1))
+                    (passwrd, money2, username1))
                 projectdatabase.commit()
+
+                mydbse.execute("INSERT INTO history"
+                    "(username, detail, money)"
+                    "VALUES(%s, %s, %s)",
+                    (username1, "Account Update From Admin", "-RM {:.2f}".format(money)))
+                projectdatabase.commit()
+
+                mydbse.execute("INSERT INTO history"
+                    "(username, detail, money)"
+                    "VALUES(%s, %s, %s)",
+                    (username1, "Account Update From Admin", "+RM {:.2f}".format(money2)))
+                projectdatabase.commit()
+
                 print("Updating "+username1+" account Sucsessfull")
                 adminside(username)
         elif askuser == "N":
@@ -679,6 +705,12 @@ def withdraw(username):
                                    (money, username))
                     projectdatabase.commit()
 
+                    mydbse.execute("INSERT INTO history"
+                        "(username, detail, money)"
+                        "VALUES(%s, %s, %s)",
+                        (username, "Money Withdraw", "-RM {:.2f}".format(userwithdraw)))
+                    projectdatabase.commit()
+
                     print("You have withdrawn RM {:.2f} from your account".format(userwithdraw))
                     print("Your account Balance: RM {:.2f}".format(money))
 
@@ -711,6 +743,12 @@ def bankin(username):
             money += bankinmoney
             mydbse.execute("UPDATE user SET money=%s WHERE username=%s",
                            (money, username))
+            projectdatabase.commit()
+
+            mydbse.execute("INSERT INTO history"
+                "(username, detail, money)"
+                "VALUES(%s, %s, %s)",
+                (username, "Bank In ", "+RM {:.2f}".format(bankinmoney)))
             projectdatabase.commit()
 
             print("You have banked in RM {:.2f} to your account".format(bankinmoney))
@@ -762,6 +800,18 @@ def transfer(username):
                                            (transfermoney, transferusername))
                             projectdatabase.commit()
 
+                            mydbse.execute("INSERT INTO history"
+                                "(username, detail, money)"
+                                "VALUES(%s, %s, %s)",
+                                (username, "Transfer To "+transferusername, "-RM {:.2f}".format(usertransfer)))
+                            projectdatabase.commit()
+
+                            mydbse.execute("INSERT INTO history"
+                                "(username, detail, money)"
+                                "VALUES(%s, %s, %s)",
+                                (transferusername, "Transfer From "+username, "+RM {:.2f}".format(usertransfer)))
+                            projectdatabase.commit()
+
                             print("You have Transfer to "+transferusername+" RM {:.2f}".format(usertransfer))
                             print("Your account Balance: RM {:.2f}".format(money))
                 else:
@@ -808,6 +858,32 @@ def changepassword(username):
     except mysql.connector.Error as err:
         print("Failed to log in: {}".format(err))
 
+def history(username):
+    print("\n-------------------------------------------------------------")
+    print("              "+username+" Transaction History:")
+    print("-------------------------------------------------------------")
+    try:
+        projectdatabase = database()
+        mydbse = projectdatabase.cursor()
+
+        mydbse.execute("SELECT * FROM history WHERE username=%s", (username,))
+        transaction_data = mydbse.fetchall()
+        
+        if transaction_data:
+            for transaction in transaction_data:
+                detail = transaction[1]
+                money = transaction[2]
+                
+                print(detail +" "+ money)
+        else:
+            print("No Transaction History")
+            
+    except mysql.connector.Error as err:
+        print("Failed to Find User: {}".format(err))
+    
+    print("-------------------------------------------------------------")
+
+
 def choose2(money, username):
     print("\n-------------------------------------------------------------")
     print("                 Account Username: "+username                 )
@@ -819,9 +895,9 @@ def choose2(money, username):
     print("-------------------------------------------------------------")
     
     try:
-        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4 or 5 or 6]: "))
+        userchoice2 = int(input("Please Choose [1 or 2 or 3 or 4 or 5 or 6 or 7]: "))
         print()
-        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3 or userchoice2 == 4 or userchoice2 == 5:
+        if userchoice2 == 1 or userchoice2 == 2 or userchoice2 == 3 or userchoice2 == 4 or userchoice2 == 5 or userchoice2 == 6 :
             if userchoice2 == 1:
                 checkbalance(username)
             elif userchoice2 == 2:
@@ -831,6 +907,8 @@ def choose2(money, username):
             elif userchoice2 == 4:
                 transfer(username)
             elif userchoice2 == 5:
+                history(username)
+            elif userchoice2 == 6:
                 changepassword(username)
             
             contotext = input("\nDo you want to continue?\nInsert Y to Continue or press Enter to Exit: ")
@@ -842,7 +920,7 @@ def choose2(money, username):
                 print("         Thank you "+username+" For Using Our System")
                 print("-------------------------------------------------------------")
                 choose()
-        elif userchoice2 == 6:
+        elif userchoice2 == 7:
             print("\n-------------------------------------------------------------")
             print("         Thank you "+username+" For Using Our System")
             print("-------------------------------------------------------------")
